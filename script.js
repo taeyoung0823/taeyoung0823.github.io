@@ -1,10 +1,13 @@
 async function setupCamera() {
     const video = document.getElementById('video');
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
     const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            facingMode: "user"  // "environment" for back camera, "user" for front camera
+            width: { ideal: screenWidth },
+            height: { ideal: screenHeight },
+            facingMode: "user"
         }
     });
     video.srcObject = stream;
@@ -51,10 +54,10 @@ async function detectPose(video, net) {
     
     let lastCountTime = Date.now();
     let count = 0;
+    const countDisplay = document.getElementById('count');
 
-    // 최근 각도를 저장하는 배열 (안정성을 높이기 위해)
     const recentAngles = [];
-    const maxRecentAngles = 10; // 최근 10개의 각도를 사용
+    const maxRecentAngles = 10;
 
     async function poseDetectionFrame() {
         const pose = await net.estimateSinglePose(video, {
@@ -77,7 +80,7 @@ async function detectPose(video, net) {
                 recentAngles.push(kneeAngle);
 
                 if (recentAngles.length > maxRecentAngles) {
-                    recentAngles.shift(); // 오래된 각도를 제거
+                    recentAngles.shift();
                 }
 
                 const averageAngle = recentAngles.reduce((sum, angle) => sum + angle, 0) / recentAngles.length;
@@ -95,9 +98,7 @@ async function detectPose(video, net) {
                 }
             }
 
-            ctx.font = "30px Arial";
-            ctx.fillStyle = "red";
-            ctx.fillText(`Count: ${count}`, canvas.width - 150, 50);
+            countDisplay.innerText = `Count: ${count}`;
         }
 
         requestAnimationFrame(poseDetectionFrame);
