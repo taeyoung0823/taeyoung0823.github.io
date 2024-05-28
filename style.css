@@ -18,7 +18,7 @@ h1 {
 }
 
 canvas {
-    width: 100%;
+    width: 100vw;
     height: auto;
     max-height: 100vh;
     border: 2px solid #333;
@@ -37,7 +37,7 @@ canvas {
 
 @media (max-width: 768px) {
     canvas {
-        width: 100%;
+        width: 100vw;
         height: auto;
         max-height: 100vh;
     }
