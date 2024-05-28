@@ -5,8 +5,8 @@ async function setupCamera() {
 
     const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-            width: { ideal: screenWidth },
-            height: { ideal: screenHeight },
+            width: { ideal: 1280 }, // 가로 비율을 넓힘
+            height: { ideal: 960 }, // 세로 비율을 늘림
             facingMode: "user"
         }
     });

@@ -9,6 +9,7 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #f0f0f0;
+    position: relative;
 }
 
 h1 {
@@ -17,18 +18,12 @@ h1 {
 }
 
 canvas {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: auto;
+    max-height: 100vh;
     border: 2px solid #333;
     display: block;
     margin: 0;
-}
-
-@media (max-width: 768px) {
-    canvas {
-        width: 100vw;
-        height: 100vh;
-    }
 }
 
 .count-text {
@@ -38,4 +33,12 @@ canvas {
     font-family: 'Poppins', sans-serif;
     font-size: 24px;
     color: red;
+}
+
+@media (max-width: 768px) {
+    canvas {
+        width: 100%;
+        height: auto;
+        max-height: 100vh;
+    }
 }
