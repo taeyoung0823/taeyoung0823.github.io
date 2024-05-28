@@ -17,6 +17,11 @@ h1 {
     text-align: center;
 }
 
+label, select {
+    margin-bottom: 20px;
+    font-family: 'Poppins', sans-serif;
+}
+
 canvas {
     width: auto;
     height: 100vh;
