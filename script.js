@@ -33,16 +33,18 @@ function calculateAngle(a, b, c) {
 }
 
 function evaluateSquat(angle) {
-    if (80 <= angle && angle <= 100) {
+    if (85 <= angle && angle <= 95) {
         return { status: "Correct", feedback: "" };
-    } else {
+    } else if (angle > 95) {
         return { status: "Incorrect", feedback: "무릎을 더 굽히세요" };
+    } else {
+        return { status: "Ready", feedback: "준비 자세" };
     }
 }
 
 function evaluateLunge(frontKneeAngle, backKneeAngle) {
-    const frontKneeCorrect = (80 <= frontKneeAngle && frontKneeAngle <= 100);
-    const backKneeCorrect = (160 <= backKneeAngle && backKneeAngle <= 180);
+    const frontKneeCorrect = (85 <= frontKneeAngle && frontKneeAngle <= 95);
+    const backKneeCorrect = (165 <= backKneeAngle && backKneeAngle <= 180);
 
     if (frontKneeCorrect && backKneeCorrect) {
         return { status: "Correct", feedback: "" };
@@ -51,24 +53,38 @@ function evaluateLunge(frontKneeAngle, backKneeAngle) {
     } else if (frontKneeCorrect && !backKneeCorrect) {
         return { status: "Incorrect", feedback: "뒤 무릎을 더 펴세요" };
     } else {
-        return { status: "Incorrect", feedback: "앞 무릎을 더 굽히고 뒤 무릎을 더 펴세요" };
+        return { status: "Ready", feedback: "준비 자세" };
     }
 }
 
 function evaluateShoulderPress(elbowAngle) {
-    if (160 <= elbowAngle && elbowAngle <= 180) {
+    if (165 <= elbowAngle && elbowAngle <= 180) {
         return { status: "Correct", feedback: "" };
-    } else {
+    } else if (elbowAngle < 165) {
         return { status: "Incorrect", feedback: "팔을 더 펴세요" };
+    } else {
+        return { status: "Ready", feedback: "준비 자세" };
     }
 }
 
 function evaluateDumbbellCurl(elbowAngle) {
-    if (60 <= elbowAngle && elbowAngle <= 80) {
+    if (65 <= elbowAngle && elbowAngle <= 75) {
         return { status: "Correct", feedback: "" };
-    } else {
+    } else if (elbowAngle > 75) {
         return { status: "Incorrect", feedback: "팔을 더 굽히세요" };
+    } else {
+        return { status: "Ready", feedback: "준비 자세" };
     }
+}
+
+function showFeedbackPopup(message) {
+    const feedbackPopup = document.getElementById('feedbackPopup');
+    const feedbackMessage = document.getElementById('feedbackMessage');
+    feedbackMessage.textContent = message;  // 메시지만 출력하도록 수정
+    feedbackPopup.style.display = 'block';
+    setTimeout(() => {
+        feedbackPopup.style.display = 'none';
+    }, 2000);
 }
 
 async function detectPose(video, net) {
@@ -92,6 +108,9 @@ async function detectPose(video, net) {
 
     const recentAngles = [];
     const maxRecentAngles = 10;
+    let lastCorrectTime = 0;
+    const correctDisplayTime = 2000; // 2 seconds
+
     async function poseDetectionFrame() {
         const pose = await net.estimateSinglePose(video, {
             flipHorizontal: false
@@ -102,7 +121,7 @@ async function detectPose(video, net) {
             drawKeypoints(pose.keypoints, 0.6, ctx);
             drawSkeleton(pose.keypoints, 0.7, ctx);
 
-            let evaluation = { status: "Incorrect", feedback: "" };
+            let evaluation = { status: "Ready", feedback: "" };
 
             if (selectedExercise === 'squat') {
                 const leftKnee = pose.keypoints.find(point => point.part === 'leftKnee' && point.score > 0.5);
@@ -191,13 +210,20 @@ async function detectPose(video, net) {
 
             ctx.font = "30px Arial";
             ctx.fillStyle = "red";
-            ctx.fillText(`${selectedExercise.charAt(0).toUpperCase() + selectedExercise.slice(1)}: ${evaluation.status}`, 10, 50);
+            const currentTime = Date.now();
 
-            if (evaluation.status === "Incorrect") {
-                ctx.fillText(`Feedback: ${evaluation.feedback}`, 10, 90);
+            if (evaluation.status === "Correct") {
+                ctx.fillText(`${selectedExercise.charAt(0).toUpperCase() + selectedExercise.slice(1)}: ${evaluation.status}`, 10, 50);
+                lastCorrectTime = currentTime;
+            } else if (evaluation.status === "Incorrect") {
+                showFeedbackPopup(evaluation.feedback);
+                ctx.fillText(`${selectedExercise.charAt(0).toUpperCase() + selectedExercise.slice(1)}: ${evaluation.status}`, 10, 50);
+            } else if (currentTime - lastCorrectTime <= correctDisplayTime) {
+                ctx.fillText(`${selectedExercise.charAt(0).toUpperCase() + selectedExercise.slice(1)}: Correct`, 10, 50);
+            } else {
+                ctx.fillText(`${selectedExercise.charAt(0).toUpperCase() + selectedExercise.slice(1)}: Ready`, 10, 50);
             }
 
-            const currentTime = Date.now();
             if (evaluation.status === "Correct" && currentTime - lastCountTime > 2000) {
                 count += 1;
                 lastCountTime = currentTime;
