@@ -34,51 +34,40 @@ function calculateAngle(a, b, c) {
 
 function evaluateSquat(angle) {
     if (80 <= angle && angle <= 100) {
-        return "Perfect";
-    } else if ((70 <= angle && angle < 80) || (100 < angle && angle <= 110)) {
-        return "Good";
-    } else if ((60 <= angle && angle < 70) || (110 < angle && angle <= 120)) {
-        return "Soso";
+        return { status: "Correct", feedback: "" };
     } else {
-        return "Bad";
+        return { status: "Incorrect", feedback: "무릎을 더 굽히세요" };
     }
 }
 
 function evaluateLunge(frontKneeAngle, backKneeAngle) {
-    const frontKneeEval = frontKneeAngle >= 80 && frontKneeAngle <= 100 ? "Perfect" :
-        (frontKneeAngle >= 70 && frontKneeAngle < 80) || (frontKneeAngle > 100 && frontKneeAngle <= 110) ? "Good" :
-        (frontKneeAngle >= 60 && frontKneeAngle < 70) || (frontKneeAngle > 110 && frontKneeAngle <= 120) ? "Soso" : "Bad";
+    const frontKneeCorrect = (80 <= frontKneeAngle && frontKneeAngle <= 100);
+    const backKneeCorrect = (160 <= backKneeAngle && backKneeAngle <= 180);
 
-    const backKneeEval = backKneeAngle >= 160 && backKneeAngle <= 180 ? "Perfect" :
-        (backKneeAngle >= 150 && backKneeAngle < 160) ? "Good" :
-        (backKneeAngle >= 140 && backKneeAngle < 150) ? "Soso" : "Bad";
-
-    return frontKneeEval === "Perfect" && backKneeEval === "Perfect" ? "Perfect" :
-        frontKneeEval === "Good" || backKneeEval === "Good" ? "Good" :
-        frontKneeEval === "Soso" || backKneeEval === "Soso" ? "Soso" : "Bad";
+    if (frontKneeCorrect && backKneeCorrect) {
+        return { status: "Correct", feedback: "" };
+    } else if (!frontKneeCorrect && backKneeCorrect) {
+        return { status: "Incorrect", feedback: "앞 무릎을 더 굽히세요" };
+    } else if (frontKneeCorrect && !backKneeCorrect) {
+        return { status: "Incorrect", feedback: "뒤 무릎을 더 펴세요" };
+    } else {
+        return { status: "Incorrect", feedback: "앞 무릎을 더 굽히고 뒤 무릎을 더 펴세요" };
+    }
 }
 
 function evaluateShoulderPress(elbowAngle) {
     if (160 <= elbowAngle && elbowAngle <= 180) {
-        return "Perfect";
-    } else if (150 <= elbowAngle && elbowAngle < 160) {
-        return "Good";
-    } else if (140 <= elbowAngle && elbowAngle < 150) {
-        return "Soso";
+        return { status: "Correct", feedback: "" };
     } else {
-        return "Bad";
+        return { status: "Incorrect", feedback: "팔을 더 펴세요" };
     }
 }
 
 function evaluateDumbbellCurl(elbowAngle) {
     if (60 <= elbowAngle && elbowAngle <= 80) {
-        return "Perfect";
-    } else if ((50 <= elbowAngle && elbowAngle < 60) || (80 < elbowAngle && elbowAngle <= 90)) {
-        return "Good";
-    } else if ((40 <= elbowAngle && elbowAngle < 50) || (90 < elbowAngle && elbowAngle <= 100)) {
-        return "Soso";
+        return { status: "Correct", feedback: "" };
     } else {
-        return "Bad";
+        return { status: "Incorrect", feedback: "팔을 더 굽히세요" };
     }
 }
 
@@ -113,6 +102,8 @@ async function detectPose(video, net) {
             drawKeypoints(pose.keypoints, 0.6, ctx);
             drawSkeleton(pose.keypoints, 0.7, ctx);
 
+            let evaluation = { status: "Incorrect", feedback: "" };
+
             if (selectedExercise === 'squat') {
                 const leftKnee = pose.keypoints.find(point => point.part === 'leftKnee' && point.score > 0.5);
                 const leftHip = pose.keypoints.find(point => point.part === 'leftHip' && point.score > 0.5);
@@ -130,18 +121,7 @@ async function detectPose(video, net) {
                     }
 
                     const averageAngle = recentAngles.reduce((sum, angle) => sum + angle, 0) / recentAngles.length;
-                    const squatEvaluation = evaluateSquat(averageAngle);
-                    console.log(`Squat Evaluation: ${squatEvaluation}, Left Knee Angle: ${averageAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Squat: ${squatEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (squatEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateSquat(averageAngle);
                 }
                 if (rightKnee && rightHip && rightAnkle) {
                     const rightKneeAngle = calculateAngle(rightHip.position, rightKnee.position, rightAnkle.position);
@@ -152,18 +132,7 @@ async function detectPose(video, net) {
                     }
 
                     const averageAngle = recentAngles.reduce((sum, angle) => sum + angle, 0) / recentAngles.length;
-                    const squatEvaluation = evaluateSquat(averageAngle);
-                    console.log(`Squat Evaluation: ${squatEvaluation}, Right Knee Angle: ${averageAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Squat: ${squatEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (squatEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateSquat(averageAngle);
                 }
             } else if (selectedExercise === 'lunge') {
                 const leftKnee = pose.keypoints.find(point => point.part === 'leftKnee' && point.score > 0.5);
@@ -176,35 +145,13 @@ async function detectPose(video, net) {
                 if (leftKnee && leftHip && leftAnkle && rightKnee && rightAnkle && rightHip) {
                     const frontKneeAngle = calculateAngle(leftHip.position, leftKnee.position, leftAnkle.position);
                     const backKneeAngle = calculateAngle(rightHip.position, rightKnee.position, rightAnkle.position);
-                    const lungeEvaluation = evaluateLunge(frontKneeAngle, backKneeAngle);
-                    console.log(`Lunge Evaluation: ${lungeEvaluation}, Front Knee Angle: ${frontKneeAngle.toFixed(2)}, Back Knee Angle: ${backKneeAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Lunge: ${lungeEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (lungeEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateLunge(frontKneeAngle, backKneeAngle);
                 }
 
                 if (rightKnee && rightHip && rightAnkle && leftKnee && leftAnkle && leftHip) {
                     const frontKneeAngle = calculateAngle(rightHip.position, rightKnee.position, rightAnkle.position);
                     const backKneeAngle = calculateAngle(leftHip.position, leftKnee.position, leftAnkle.position);
-                    const lungeEvaluation = evaluateLunge(frontKneeAngle, backKneeAngle);
-                    console.log(`Lunge Evaluation: ${lungeEvaluation}, Front Knee Angle: ${frontKneeAngle.toFixed(2)}, Back Knee Angle: ${backKneeAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Lunge: ${lungeEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (lungeEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateLunge(frontKneeAngle, backKneeAngle);
                 }
             } else if (selectedExercise === 'shoulderPress') {
                 const leftElbow = pose.keypoints.find(point => point.part === 'leftElbow' && point.score > 0.5);
@@ -216,34 +163,12 @@ async function detectPose(video, net) {
 
                 if (leftElbow && leftShoulder && leftWrist) {
                     const leftElbowAngle = calculateAngle(leftShoulder.position, leftElbow.position, leftWrist.position);
-                    const shoulderPressEvaluation = evaluateShoulderPress(leftElbowAngle);
-                    console.log(`Shoulder Press Evaluation: ${shoulderPressEvaluation}, Left Elbow Angle: ${leftElbowAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Shoulder Press: ${shoulderPressEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (shoulderPressEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateShoulderPress(leftElbowAngle);
                 }
 
                 if (rightElbow && rightShoulder && rightWrist) {
                     const rightElbowAngle = calculateAngle(rightShoulder.position, rightElbow.position, rightWrist.position);
-                    const shoulderPressEvaluation = evaluateShoulderPress(rightElbowAngle);
-                    console.log(`Shoulder Press Evaluation: ${shoulderPressEvaluation}, Right Elbow Angle: ${rightElbowAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Shoulder Press: ${shoulderPressEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (shoulderPressEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateShoulderPress(rightElbowAngle);
                 }
             } else if (selectedExercise === 'dumbbellCurl') {
                 const leftElbow = pose.keypoints.find(point => point.part === 'leftElbow' && point.score > 0.5);
@@ -255,35 +180,27 @@ async function detectPose(video, net) {
 
                 if (leftElbow && leftShoulder && leftWrist) {
                     const leftElbowAngle = calculateAngle(leftShoulder.position, leftElbow.position, leftWrist.position);
-                    const dumbbellCurlEvaluation = evaluateDumbbellCurl(leftElbowAngle);
-                    console.log(`Dumbbell Curl Evaluation: ${dumbbellCurlEvaluation}, Left Elbow Angle: ${leftElbowAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Dumbbell Curl: ${dumbbellCurlEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (dumbbellCurlEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateDumbbellCurl(leftElbowAngle);
                 }
 
                 if (rightElbow && rightShoulder && rightWrist) {
                     const rightElbowAngle = calculateAngle(rightShoulder.position, rightElbow.position, rightWrist.position);
-                    const dumbbellCurlEvaluation = evaluateDumbbellCurl(rightElbowAngle);
-                    console.log(`Dumbbell Curl Evaluation: ${dumbbellCurlEvaluation}, Right Elbow Angle: ${rightElbowAngle.toFixed(2)}`);
-
-                    ctx.font = "30px Arial";
-                    ctx.fillStyle = "red";
-                    ctx.fillText(`Dumbbell Curl: ${dumbbellCurlEvaluation}`, 10, 50);
-
-                    const currentTime = Date.now();
-                    if (dumbbellCurlEvaluation === "Perfect" && currentTime - lastCountTime > 2000) {
-                        count += 1;
-                        lastCountTime = currentTime;
-                    }
+                    evaluation = evaluateDumbbellCurl(rightElbowAngle);
                 }
+            }
+
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "red";
+            ctx.fillText(`${selectedExercise.charAt(0).toUpperCase() + selectedExercise.slice(1)}: ${evaluation.status}`, 10, 50);
+
+            if (evaluation.status === "Incorrect") {
+                ctx.fillText(`Feedback: ${evaluation.feedback}`, 10, 90);
+            }
+
+            const currentTime = Date.now();
+            if (evaluation.status === "Correct" && currentTime - lastCountTime > 2000) {
+                count += 1;
+                lastCountTime = currentTime;
             }
 
             countDisplay.innerText = `Count: ${count}`;
